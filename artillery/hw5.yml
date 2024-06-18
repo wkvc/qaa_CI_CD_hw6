@@ -1,0 +1,36 @@
+config:
+  target: "http://httpbin.org/"
+  phases:
+    - duration: 5
+      arrivalRate: 5
+      name: Payload test
+  payload:
+    - path: "payload.csv"
+      fields:
+        - "keyword1"
+        - "keyword2"
+      order: sequence
+  plugins:
+    ensure: {}
+  ensure:
+    thresholds:
+      - http.response_time.p95: 1000
+    conditions:
+      - expression: vusers.failed == 0
+      - expression: "http.request_rate >= 2 and http.response_time.max < 600"
+
+scenarios:
+  - name: Getting a resource
+    flow:
+      - get:
+          url: "{{ target }}get"
+      - post:
+          url: "{{ target }}post"
+          json:
+            username: "{{ keyword1 }}"
+            password: "{{ keyword2 }}"
+          capture:
+            - json: "$.json"
+              as: "request_body"
+            - json: "$.headers.Host"
+              as: "host"
